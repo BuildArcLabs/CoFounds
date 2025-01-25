@@ -1,4 +1,4 @@
-import prisma from "../../../prisma/client";
+import prisma from "../../../../../prisma/client";
 
 export const updateResource = async (id: string, data: Partial<{ 
     title: string; 
@@ -6,11 +6,11 @@ export const updateResource = async (id: string, data: Partial<{
     image: string; 
     is_active: boolean; 
   }>) => {
-    return prisma.resource_master.update({
+    return prisma.resourceMaster.update({
       where: { id },
       data: {
         ...data,
-        updated_at: new Date(),
+        updatedAt: new Date(),
       },
     });
   };

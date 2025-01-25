@@ -1,7 +1,7 @@
-import prisma from "../../../prisma/client";
+import prisma from "../../../../../prisma/client";
 
 export const getResourceById = async (id: string) => {
-  return prisma.resource_master.findUnique({
+  return prisma.resourceMaster.findUnique({
     where: { id },
   });
 };

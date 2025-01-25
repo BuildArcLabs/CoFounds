@@ -1,4 +1,4 @@
-import prisma from "../../../prisma/client";
+import prisma from "../../../../../prisma/client";
 
 export const createBulkResources = async (
   resources: Array<{
@@ -9,7 +9,7 @@ export const createBulkResources = async (
     created_by?: string;
   }>
 ) => {
-  return await prisma.resource_master.createMany({
+  return await prisma.resourceMaster.createMany({
     data: resources.map((resource) => ({
       title: resource.title,
       link: resource.link,

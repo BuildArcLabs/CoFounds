@@ -1,14 +1,14 @@
-import prisma from '../../../prisma/client';
+import prisma from "../../../../../prisma/client";
 
 export const getResourceByTitle = async (title: string) => {
-    return prisma.resource_master.findUnique({
+    return prisma.resourceMaster.findUnique({
         where: {title},
         select: {
             title: true,
             link: true,
-            is_active: true,
-            created_at: true,
-            updated_at: true,
+            isActive: true,
+            createdAt: true,
+            updatedAt: true,
         }
     });
 };

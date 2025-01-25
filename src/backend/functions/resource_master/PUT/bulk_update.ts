@@ -1,4 +1,4 @@
-import prisma from "../../../prisma/client";
+import prisma from "../../../../../prisma/client";
 
 // UUID validation regex
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -24,11 +24,11 @@ export const updateBulkResources = async (resources: UpdateResourceData[]) => {
 
   try {
     const updatePromises = resources.map(resource => 
-      prisma.resource_master.update({
+      prisma.resourceMaster.update({
         where: { id: resource.id },
         data: {
           ...resource.data,
-          updated_at: new Date(),
+          updatedAt: new Date(),
         },
       })
     );

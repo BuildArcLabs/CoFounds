@@ -1,14 +1,10 @@
-import prisma from "../../../prisma/client";
+import prisma from "../../../../../prisma/client";
 
 export const getPaginatedResources = async (page: number) => {
     const limit = 9;
     const skip = (page - 1) * limit;
-
-    console.log("Page:", page);
-    console.log("Skip:", skip);
-    console.log("Take:", limit);
   
-    const resources = await prisma.resource_master.findMany({
+    const resources = await prisma.resourceMaster.findMany({
       skip: skip,
       take: limit,
       orderBy: {
@@ -17,13 +13,13 @@ export const getPaginatedResources = async (page: number) => {
       select: {
         title: true,
         link: true,
-        is_active: true,
-        created_at: true,
-        updated_at: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
   
-    const totalResources = await prisma.resource_master.count();
+    const totalResources = await prisma.resourceMaster.count();
     return {
       resources,
       totalResources,
