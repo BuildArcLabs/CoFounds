@@ -38,20 +38,20 @@ export default function WhyChooseUs() {
               <span className="text-[#162D67] mr-4">✔</span>
               <p className="text-lg">
                 Say goodbye to cover letters - your profile is all you need. One
-                click to apply and you're done.
+                click to apply and you&apos;re done.
               </p>
             </li>
             <li className="flex items-start">
               <span className="text-[#162D67] mr-4">✔</span>
               <p className="text-lg">
-                Unique jobs at startups and tech companies you can't find
+                Unique jobs at startups and tech companies you can&apos;t find
                 anywhere else.
               </p>
             </li>
             <li className="flex items-start">
               <span className="text-[#162D67] mr-4">✔</span>
               <p className="text-lg">
-                Unique jobs at startups and tech companies you can't find
+                Unique jobs at startups and tech companies you can&apos;t find
                 anywhere else.
               </p>
             </li>

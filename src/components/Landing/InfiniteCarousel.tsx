@@ -183,7 +183,7 @@ function ReviewGrid() {
       {isInView ? (
         <>
           <div className="lg:hidden overflow-hidden">
-            <ReviewRow reviews={TESTIMONIALS} msPerPixel={20} />
+            <ReviewRow reviews={TESTIMONIALS} />
           </div>
           <div className="hidden lg:block">
             <ReviewColumn
@@ -270,31 +270,12 @@ function ReviewRow({
   reviews,
   className,
   reviewClassName,
-  msPerPixel = 0,
 }: {
   reviews: typeof TESTIMONIALS;
   className?: string;
   reviewClassName?: (reviewIndex: number) => string;
-  msPerPixel?: number;
 }) {
   const rowRef = useRef<HTMLDivElement | null>(null);
-  const [rowWidth, setRowWidth] = useState(0);
-
-  const duration = `${rowWidth * msPerPixel}ms`;
-
-  useEffect(() => {
-    if (!rowRef.current) return;
-
-    const resizeObserver = new window.ResizeObserver(() => {
-      setRowWidth(rowRef.current?.scrollWidth ?? 0);
-    });
-
-    resizeObserver.observe(rowRef.current);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, []);
 
   return (
     <div className="overflow-hidden">
