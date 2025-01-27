@@ -6,7 +6,7 @@ import { Briefcase, Star, User2 } from "lucide-react";
 
 const UbuntuFont = Ubuntu({
   weight: ["500"],
-  subsets: ["latin"], // Specify subsets here
+  subsets: ["latin"],
 });
 
 const Landing = () => {
