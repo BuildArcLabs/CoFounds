@@ -209,7 +209,7 @@ function ReviewGrid() {
           <ReviewColumn
             reviews={column3.flat()}
             className="hidden lg:block"
-            msPerPixel={10}
+            msPerPixel={11}
           />
         </>
       ) : null}
