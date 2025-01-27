@@ -2,11 +2,12 @@ import React from "react";
 import { Ubuntu } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
-
 import { Briefcase, Star, User2 } from "lucide-react";
 
-const UbuntuFont = Ubuntu({ subsets: ["latin"], weight: ["500"] });
-// const JerseyFont = Jersey_15({ weight: ["400"] });
+const UbuntuFont = Ubuntu({
+  weight: ["500"],
+  subsets: ["latin"], // Specify subsets here
+});
 
 const Landing = () => {
   return (
