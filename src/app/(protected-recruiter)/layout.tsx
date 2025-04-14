@@ -16,31 +16,34 @@ export default function RecruiterLayout({
   const dispatch = useAppDispatch();
   const router = useRouter();
   const pathname = usePathname();
-  
+
   // Auth state
   const { user, isAuthenticated, isLoading: authLoading } = useAppSelector(
     (state) => state.auth
   );
-  
+
   // Recruiter state
   const { userId, isLoading: profileLoading } = useAppSelector(
     (state) => state.recruiter
   );
-  
+
   // Track initialization
   const [authInitialized, setAuthInitialized] = useState(false);
   const [profileInitialized, setProfileInitialized] = useState(false);
-  
+  const [showDebug, setShowDebug] = useState(false);
+
   // Determine active view from pathname
   const getActiveViewFromPath = (path: string) => {
     if (path.includes('/jobs/')) return 'jobs-created';
     if (path.includes('/create')) return 'create-job';
     if (path.includes('/kanban')) return 'kanban';
+    if (path.includes('/your-profile')) return 'your-profile';
+    if (path.includes('/company-profile')) return 'company-profile';
     return 'all-jobs';
   };
-  
+
   const activeView = getActiveViewFromPath(pathname);
-  
+
   // Step 1: Initialize auth when component mounts
   useEffect(() => {
     if (!authInitialized) {
@@ -48,7 +51,7 @@ export default function RecruiterLayout({
       setAuthInitialized(true);
     }
   }, [dispatch, authInitialized]);
-  
+
   // Step 2: Load profile data once authentication is complete
   useEffect(() => {
     const loadProfile = async () => {
@@ -66,10 +69,10 @@ export default function RecruiterLayout({
         }
       }
     };
-    
+
     loadProfile();
   }, [dispatch, isAuthenticated, user, profileInitialized, profileLoading]);
-  
+
   // Handle navigation
   const handleSidebarNavigation = (view: string) => {
     // Only navigate if the view is different from current
@@ -85,7 +88,18 @@ export default function RecruiterLayout({
       }
     }
   };
-  
+
+  // Handle top bar navigation
+  const handleTopBarNavigation = (view: string) => {
+    if (view !== activeView) {
+      if (view === 'your-profile') {
+        router.push('/recruiter/app/your-profile');
+      } else if (view === 'company-profile') {
+        router.push('/recruiter/app/company-profile');
+      }
+    }
+  };
+
   // Auth loading state
   if (authLoading) {
     return (
@@ -95,19 +109,19 @@ export default function RecruiterLayout({
       </div>
     );
   }
-  
+
   // Auth error state
   if (authInitialized && !authLoading && !isAuthenticated) {
     router.push('/auth/recruiter-sign-in');
     return null;
   }
-  
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar activeView={activeView} onViewChange={handleSidebarNavigation} />
-      
+
       <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar />
+        <TopBar activeView={activeView} onViewChange={handleTopBarNavigation} />
         <main className="flex-1 overflow-y-auto p-6">
           {profileLoading ? (
             <div className="flex flex-col items-center justify-center h-[80vh]">
