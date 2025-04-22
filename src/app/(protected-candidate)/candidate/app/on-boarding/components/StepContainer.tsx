@@ -1,41 +1,35 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { OnboardingFormFields } from './types';
+import { OnboardingFormFields, } from './types';
+import {
+  SkillWithId,
+  Education, 
+  Certificate, 
+  ProofOfWork,
+  Project,
+} from "@/types/candidate_onboarding";
 import UsernameStep from './steps/UsernameStep';
 import PersonalInfoStep from './steps/PersonalInfoStep';
 import EducationStep from './steps/EducationStep';
+import CertificateStep from './steps/CertificateStep';
+import ProofOfWorkStep from './steps/ProofOfWorkStep';
+import ProjectStep from './steps/ProjectStep'; 
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useAppSelector } from '@/redux/hooks';
+
 
 interface CandidateOnboardingState {
   userName: string;
   firstName: string;
   lastName: string;
   description: string;
-  skills: Array<{
-    id: string;
-    name: string;
-    skill_level: 'beginner' | 'intermediate' | 'advanced';
-  }>;
-  education: Array<{
-    id: string;
-    institution: string;
-    degree: string;
-    startDate: {
-      year: string;
-      month: string;
-      day: string;
-    };
-    endDate: {
-      year: string;
-      month: string;
-      day: string;
-    } | null;
-    currentlyStudying: boolean;
-  }>;
-  // certificates: any[];
-  // proofsOfWork: any[];
-  // projects: any[];
+  skills: SkillWithId[];
+  education: Education[];
+  certificates: Certificate[];
+  proofsOfWork: ProofOfWork[];
+  projects: Project[]; 
   currentStep: number;
   steps: string[];
   status: 'idle' | 'loading' | 'submitting' | 'success' | 'error';
@@ -59,6 +53,15 @@ export default function StepContainer({
   onPreviousStep
 }: StepContainerProps) {
   const { register, watch, setValue, formState: { errors } } = form;
+  const [showSummary, setShowSummary] = useState(false);
+  const candidateState = useAppSelector(state => state.candidateOnboarding);
+  
+  const handleSubmit = () => {
+    
+    setShowSummary(true);
+    
+    onValidateAndProceed();
+  };
 
   const renderStep = (): ReactNode => {
     switch (currentStep) {
@@ -105,7 +108,59 @@ export default function StepContainer({
             onAddEducation={() => {}}
             onRemoveEducation={() => {}}
             onUpdateEducation={() => {}}
-            maxEducationEntries={3}
+            maxEducationEntries={5}
+          />
+        );
+      case 4:
+        return (
+          <CertificateStep
+            formState={{
+              certificates: onboarding.certificates || [],
+            }}
+            errors={errors}
+            register={register}
+            watch={watch}
+            setValue={setValue}
+            onNextStep={onValidateAndProceed}
+            onPreviousStep={onPreviousStep}
+            onAddCertificate={() => {}}
+            onRemoveCertificate={() => {}}
+            onUpdateCertificate={() => {}}
+            maxCertificateEntries={10}
+          />
+        );
+      case 5:
+        return (
+          <ProofOfWorkStep
+            formState={{
+              proofsOfWork: onboarding.proofsOfWork || [], 
+            }}
+            errors={errors}
+            register={register}
+            watch={watch}
+            setValue={setValue}
+            onNextStep={onValidateAndProceed}
+            onPreviousStep={onPreviousStep}
+            onAddProofOfWork={() => {}}
+            onRemoveProofOfWork={() => {}}
+            onUpdateProofOfWork={() => {}}
+          />
+        );
+      case 6:
+        return (
+          <ProjectStep
+            formState={{
+              projects: onboarding.projects || [],
+            }}
+            errors={errors}
+            register={register}
+            watch={watch}
+            setValue={setValue}
+            onNextStep={handleSubmit}
+            onPreviousStep={onPreviousStep}
+            onAddProject={() => {}}
+            onRemoveProject={() => {}}
+            onUpdateProject={() => {}}
           />
         );
       default:
@@ -113,5 +168,23 @@ export default function StepContainer({
     }
   };
 
-  return <>{renderStep()}</>;
+  return (
+    <>
+      {renderStep()}
+      
+      {/* Summary Dialog */}
+      <Dialog open={showSummary} onOpenChange={setShowSummary}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>Your Onboarding Data</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <pre className="bg-gray-100 p-4 rounded-md overflow-auto max-h-[400px] text-xs">
+              {JSON.stringify(candidateState, null, 2)}
+            </pre>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }

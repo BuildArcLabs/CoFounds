@@ -4,12 +4,18 @@ import prisma from "../../../../../prisma/client";
 export const getPaginatedDegrees = async (page: number) => {
   const skip = (page - 1) * ITEMS_PER_PAGE;
 
+  const totalDegrees = await prisma.degreeMaster.count({
+    where: { isActive: true }
+  });
+
   const degrees = await prisma.degreeMaster.findMany({
     skip: skip,
     take: ITEMS_PER_PAGE,
-    where: {isActive: true},
+    where: {
+      isActive: true
+    },
     orderBy: {
-      name: "desc",
+      name: "asc",
     },
     select: {
       id: true,
@@ -20,8 +26,6 @@ export const getPaginatedDegrees = async (page: number) => {
       updatedAt: true,
     },
   });
-
-  const totalDegrees = await prisma.degreeMaster.count({where: {isActive: true}});
 
   return {
     degrees,

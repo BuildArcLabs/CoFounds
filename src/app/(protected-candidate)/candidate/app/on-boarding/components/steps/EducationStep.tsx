@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, AlertCircle } from 'lucide-react';
 import { useAppDispatch } from '@/redux/hooks';
 import { Alert } from '@/components/ui/alert';
-import { EducationStepProps, Education, EducationFieldErrors } from '../types';
+import { Education } from "@/types/candidate_onboarding";
+import { EducationStepProps, EducationFieldErrors } from '../types';
 import EducationForm from './EducationForm';
 import { addEducation, removeEducation, updateEducation } from '@/redux/slices/candidateOnboardingSlice';
 import { fetchDegreesPaginated } from '@/redux/masters/degreeMaster';
@@ -20,7 +21,7 @@ export default function EducationStep({
   onAddEducation,
   onRemoveEducation,
   onUpdateEducation,
-  maxEducationEntries,
+  maxEducationEntries = 5,
 }: EducationStepProps) {
   const dispatch = useAppDispatch();
   const [degrees, setDegrees] = useState<{ id: string, name: string }[]>([]);
@@ -29,9 +30,7 @@ export default function EducationStep({
   const [error, setError] = useState<string | null>(null);
 
   const educations = watch('education') || [];
-  const hasHighSchool = educations.some(edu => edu.degree === 'high_school');
 
-  // Generate date options
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 30 }, (_, i) => (currentYear - i).toString());
   const months = [
@@ -44,7 +43,6 @@ export default function EducationStep({
   ];
   const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
 
-  // Fetch degrees on component mount
   useEffect(() => {
     async function loadDegrees() {
       try {
@@ -55,7 +53,6 @@ export default function EducationStep({
         setError(null);
       } catch (err) {
         setError("Failed to load degrees. Please try again.");
-        console.error("Error fetching degrees:", err);
       } finally {
         setIsLoading(false);
       }
@@ -113,11 +110,15 @@ export default function EducationStep({
     setAllDegrees(newDegrees);
   };
 
+  const selectedDegreeIds = educations
+    .map(edu => edu.degree)
+    .filter(id => id !== '');
+
   return (
     <div className="space-y-6">
       <div className="mb-6">
         <h2 className="text-lg font-semibold mb-2">Education</h2>
-        <p className="text-gray-600">Add your educational background. 10+2 or 12th Standard is required.</p>
+        <p className="text-gray-600">Add your educational background.</p>
       </div>
 
       {error && (
@@ -125,14 +126,6 @@ export default function EducationStep({
           <AlertCircle className="h-4 w-4 mr-2" />
           {error}
         </Alert>
-      )}
-
-      {!hasHighSchool && educations.length > 0 && (
-        <Alert key="highschool-alert" variant="destructive" className="mb-4 flex items-center">
-          <AlertCircle className="w-5 mr-4" />
-          <span>10+2 or 12th Standard education is required.</span>
-        </Alert>
-
       )}
 
       {educations.length === 0 ? (
@@ -149,36 +142,41 @@ export default function EducationStep({
         </div>
       ) : (
         <div className="space-y-6">
-          {educations.map((education, index) => (
-            <EducationForm
-              key={education.id}
-              education={education}
-              index={index}
-              register={register}
-              watch={watch}
-              setValue={setValue}
-              onRemove={() => handleRemoveEducation(education.id)}
-              onUpdate={(updates) => handleUpdateEducation(education.id, updates)}
-              years={years}
-              months={months}
-              days={days}
-              errors={errors.education?.[index] as EducationFieldErrors}
-              currentlyStudying={education.currentlyStudying}
-              onCurrentlyStudyingChange={(checked) => {
-                handleUpdateEducation(education.id, {
-                  currentlyStudying: checked,
-                  endDate: checked ? null : {
-                    year: currentYear.toString(),
-                    month: '01',
-                    day: '01'
-                  }
-                });
-              }}
-              degrees={allDegrees}
-              isLoadingDegrees={isLoading}
-              onUpdateDegrees={handleUpdateDegrees}
-            />
-          ))}
+          {educations.map((education, index) => {
+            const excludeIds = selectedDegreeIds.filter(id => id !== education.degree);
+
+            return (
+              <EducationForm
+                key={education.id}
+                education={education}
+                index={index}
+                register={register}
+                watch={watch}
+                setValue={setValue}
+                onRemove={() => handleRemoveEducation(education.id)}
+                onUpdate={(updates) => handleUpdateEducation(education.id, updates)}
+                years={years}
+                months={months}
+                days={days}
+                errors={errors.education?.[index] as EducationFieldErrors}
+                currentlyStudying={education.currentlyStudying}
+                onCurrentlyStudyingChange={(checked) => {
+                  handleUpdateEducation(education.id, {
+                    currentlyStudying: checked,
+                    endDate: checked ? null : {
+                      year: currentYear.toString(),
+                      month: '01',
+                      day: '01'
+                    }
+                  });
+                }}
+                degrees={allDegrees}
+                isLoadingDegrees={isLoading}
+                onUpdateDegrees={handleUpdateDegrees}
+                excludeDegreeIds={excludeIds}
+              />
+            );
+          })}
 
           {educations.length < maxEducationEntries && (
             <div className="flex justify-center">

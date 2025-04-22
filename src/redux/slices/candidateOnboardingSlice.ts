@@ -1,123 +1,30 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import {
+  SkillWithId,
+  Education,
+  Certificate,
+  ProofOfWork,
+  Project,
+  DateField
+} from '@/types/candidate_onboarding';
 
-// Skill interface
-export interface SkillWithId {
-  id: string;
-  name: string;
-  skill_level: 'beginner' | 'intermediate' | 'advanced';
-}
 
-// Education interface
-export interface Education {
-  id: string;
-  institution: string;
-  startDate: {
-    year: string;
-    month: string;
-    day: string;
-  };
-  endDate: {
-    year: string;
-    month: string;
-    day: string;
-  } | null;
-  currentlyStudying: boolean;
-  degree: string;
-}
-
-// Certificate interface
-export interface Certificate {
-  id: string;
-  title: string;
-  description: string;
-  startDate: {
-    year: string;
-    month: string;
-    day: string;
-  };
-  endDate: {
-    year: string;
-    month: string;
-    day: string;
-  } | null;
-  fileUrl: string; // Can be an uploaded file URL or external URL
-}
-
-// Proof of Work interface
-export interface ProofOfWork {
-  id: string;
-  title: string;
-  companyName: string; // Will be "COF_PROOF_COMMUNITY" for community proofs
-  description: string;
-  startDate: {
-    year: string;
-    month: string;
-    day: string;
-  };
-  endDate: {
-    year: string;
-    month: string;
-    day: string;
-  } | null;
-  currentlyWorking: boolean;
-  isCommunityProof: boolean;
-}
-
-// Project interface
-export interface Project {
-  id: string;
-  title: string;
-  description: string;
-  projectUrl: string;
-  startDate: {
-    year: string;
-    month: string;
-    day: string;
-  };
-  endDate: {
-    year: string;
-    month: string;
-    day: string;
-  } | null;
-  currentlyBuilding: boolean;
-}
-
-// Date type for reusability
-export interface DateField {
-  year: string;
-  month: string;
-  day: string;
-}
-
-// Define the state structure
 interface CandidateOnboardingState {
-  // Step management
+  userName: string;
+  firstName: string;
+  lastName: string;
+  description: string;
+  skills: SkillWithId[];
+  education: Education[];
+  certificates: Certificate[];
+  proofsOfWork: ProofOfWork[];
+  projects: Project[];
   currentStep: number;
   steps: string[];
   isDirty: boolean;
   status: 'idle' | 'submitting' | 'success' | 'error';
   error: string | null;
-  
-  // Step 1: Username
-  userName: string;
-  
-  // Step 2: Personal Info
-  firstName: string;
-  lastName: string;
-  description: string;
-  skills: SkillWithId[];
-  
-  // Step 3: Education
-  education: Education[];
-  
-  // Step 4: Certificates
-  certificates: Certificate[];
-  
-  // Step 5: Proof of Work
-  proofsOfWork: ProofOfWork[];
-  
-  // Step 6: Projects
-  projects: Project[];
+  dateOfBirth: DateField | null;
 }
 
 const initialState: CandidateOnboardingState = {
@@ -131,6 +38,7 @@ const initialState: CandidateOnboardingState = {
   
   firstName: '',
   lastName: '',
+  dateOfBirth: null,
   description: '',
   skills: [],
   
@@ -138,7 +46,7 @@ const initialState: CandidateOnboardingState = {
   
   certificates: [],
   
-  proofsOfWork: [],
+  proofsOfWork: [] as ProofOfWork[],
   
   projects: []
 };
@@ -147,7 +55,7 @@ export const candidateOnboardingSlice = createSlice({
   name: 'candidateOnboarding',
   initialState,
   reducers: {
-    // Navigation actions
+    
     setStep: (state, action: PayloadAction<number>) => {
       if (action.payload >= 1 && action.payload <= state.steps.length) {
         state.currentStep = action.payload;
@@ -158,19 +66,23 @@ export const candidateOnboardingSlice = createSlice({
       state.error = action.payload.error || null;
     },
     
-    // Step 1 actions
+    
     setUserName: (state, action: PayloadAction<string>) => {
       state.userName = action.payload;
       state.isDirty = true;
     },
     
-    // Step 2 actions
+    
     setFirstName: (state, action: PayloadAction<string>) => {
       state.firstName = action.payload;
       state.isDirty = true;
     },
     setLastName: (state, action: PayloadAction<string>) => {
       state.lastName = action.payload;
+      state.isDirty = true;
+    },
+    setDateOfBirth: (state, action: PayloadAction<DateField>) => {
+      state.dateOfBirth = action.payload;
       state.isDirty = true;
     },
     setDescription: (state, action: PayloadAction<string>) => {
@@ -185,16 +97,16 @@ export const candidateOnboardingSlice = createSlice({
       state.skills = state.skills.filter(skill => skill.id !== action.payload);
       state.isDirty = true;
     },
-    updateSkillLevel: (state, action: PayloadAction<{ skillId: string, skill_level: 'beginner' | 'intermediate' | 'advanced' }>) => {
-      const { skillId, skill_level } = action.payload;
-      const skillToUpdate = state.skills.find(skill => skill.id === skillId);
-      if (skillToUpdate) {
-        skillToUpdate.skill_level = skill_level;
-        state.isDirty = true;
+    updateSkillLevel: (state, action: PayloadAction<{ skillId: string, level: string }>) => {
+      const { skillId, level } = action.payload;
+      const skillIndex = state.skills.findIndex(s => s.id === skillId);
+      
+      if (skillIndex !== -1) {
+        state.skills[skillIndex].level = level as 'beginner' | 'intermediate' | 'advanced';
       }
     },
     
-    // Step 3 actions
+    
     addEducation: (state, action: PayloadAction<Education>) => {
       state.education.push(action.payload);
       state.isDirty = true;
@@ -212,8 +124,11 @@ export const candidateOnboardingSlice = createSlice({
       state.isDirty = true;
     },
     
-    // Step 4 actions
+    
     addCertificate: (state, action: PayloadAction<Certificate>) => {
+      if (!state.certificates) {
+        state.certificates = [];
+      }
       state.certificates.push(action.payload);
       state.isDirty = true;
     },
@@ -222,16 +137,19 @@ export const candidateOnboardingSlice = createSlice({
       const index = state.certificates.findIndex(cert => cert.id === id);
       if (index !== -1) {
         state.certificates[index] = { ...state.certificates[index], ...updates };
-        state.isDirty = true;
       }
+      state.isDirty = true;
     },
     removeCertificate: (state, action: PayloadAction<string>) => {
       state.certificates = state.certificates.filter(cert => cert.id !== action.payload);
       state.isDirty = true;
     },
     
-    // Step 5 actions
+    
     addProofOfWork: (state, action: PayloadAction<ProofOfWork>) => {
+      if (!state.proofsOfWork) {
+        state.proofsOfWork = [];
+      }
       state.proofsOfWork.push(action.payload);
       state.isDirty = true;
     },
@@ -241,9 +159,9 @@ export const candidateOnboardingSlice = createSlice({
       if (index !== -1) {
         state.proofsOfWork[index] = { ...state.proofsOfWork[index], ...updates };
         
-        // Update company name if isCommunityProof changed
-        if (updates.isCommunityProof !== undefined) {
-          state.proofsOfWork[index].companyName = updates.isCommunityProof ? 'COF_PROOF_COMMUNITY' : state.proofsOfWork[index].companyName;
+        
+        if (updates.isCommunityWork !== undefined) {
+          state.proofsOfWork[index].company_name = updates.isCommunityWork ? 'COF_PROOF_COMMUNITY' : state.proofsOfWork[index].company_name;
         }
         
         state.isDirty = true;
@@ -254,8 +172,11 @@ export const candidateOnboardingSlice = createSlice({
       state.isDirty = true;
     },
     
-    // Step 6 actions
+    
     addProject: (state, action: PayloadAction<Project>) => {
+      if (!state.projects) {
+        state.projects = [];
+      }
       state.projects.push(action.payload);
       state.isDirty = true;
     },
@@ -272,7 +193,7 @@ export const candidateOnboardingSlice = createSlice({
       state.isDirty = true;
     },
     
-    // Form reset
+    
     resetForm: (state) => {
       return { ...initialState, currentStep: state.currentStep };
     }
@@ -285,6 +206,7 @@ export const {
   setUserName,
   setFirstName,
   setLastName,
+  setDateOfBirth,
   setDescription,
   addSkill,
   removeSkill,
