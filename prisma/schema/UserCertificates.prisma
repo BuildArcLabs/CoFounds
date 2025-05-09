@@ -3,7 +3,7 @@ model UserCertificates {
   userId      String     @map("user_id") @db.Uuid
   startedAt   DateTime?  @map("started_at") @db.Date
   endAt       DateTime?  @map("end_at") @db.Date
-  filePath    String?
+  filePath    String?    @map("file_path")
   link        String?
   title       String
   description String?
@@ -14,5 +14,6 @@ model UserCertificates {
   updatedAt   DateTime   @updatedAt @map("updated_at")
   user        UserMaster @relation(fields: [userId], references: [id])
 
+  @@unique([userId, title], name: "user_certificate_unique")
   @@map("user_certificates")
 }

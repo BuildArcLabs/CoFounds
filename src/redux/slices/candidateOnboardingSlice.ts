@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import {
   SkillWithId,
   Education,
@@ -7,6 +7,8 @@ import {
   Project,
   DateField
 } from '@/types/candidate_onboarding';
+import { RootState } from '../store';
+import { fetchWithAuth_POST } from '@/utils/api';
 
 
 interface CandidateOnboardingState {
@@ -25,6 +27,12 @@ interface CandidateOnboardingState {
   status: 'idle' | 'submitting' | 'success' | 'error';
   error: string | null;
   dateOfBirth: DateField | null;
+  submissionStatus: {
+    [key: string]: 'idle' | 'loading' | 'success' | 'error';
+  };
+  submissionErrors: {
+    [key: string]: string | null;
+  };
 }
 
 const initialState: CandidateOnboardingState = {
@@ -33,29 +41,48 @@ const initialState: CandidateOnboardingState = {
   isDirty: false,
   status: 'idle',
   error: null,
-  
+
   userName: '',
-  
+
   firstName: '',
   lastName: '',
   dateOfBirth: null,
   description: '',
   skills: [],
-  
+
   education: [],
-  
+
   certificates: [],
-  
+
   proofsOfWork: [] as ProofOfWork[],
-  
-  projects: []
+
+  projects: [],
+
+  submissionStatus: {
+    profile: 'idle',
+    skills: 'idle',
+    education: 'idle',
+    certificates: 'idle',
+    experience: 'idle',
+    projects: 'idle',
+    complete: 'idle'
+  },
+  submissionErrors: {
+    profile: null,
+    skills: null,
+    education: null,
+    certificates: null,
+    experience: null,
+    projects: null,
+    complete: null
+  }
 };
 
 export const candidateOnboardingSlice = createSlice({
   name: 'candidateOnboarding',
   initialState,
   reducers: {
-    
+
     setStep: (state, action: PayloadAction<number>) => {
       if (action.payload >= 1 && action.payload <= state.steps.length) {
         state.currentStep = action.payload;
@@ -65,14 +92,14 @@ export const candidateOnboardingSlice = createSlice({
       state.status = action.payload.status;
       state.error = action.payload.error || null;
     },
-    
-    
+
+
     setUserName: (state, action: PayloadAction<string>) => {
       state.userName = action.payload;
       state.isDirty = true;
     },
-    
-    
+
+
     setFirstName: (state, action: PayloadAction<string>) => {
       state.firstName = action.payload;
       state.isDirty = true;
@@ -100,13 +127,13 @@ export const candidateOnboardingSlice = createSlice({
     updateSkillLevel: (state, action: PayloadAction<{ skillId: string, level: string }>) => {
       const { skillId, level } = action.payload;
       const skillIndex = state.skills.findIndex(s => s.id === skillId);
-      
+
       if (skillIndex !== -1) {
         state.skills[skillIndex].level = level as 'beginner' | 'intermediate' | 'advanced';
       }
     },
-    
-    
+
+
     addEducation: (state, action: PayloadAction<Education>) => {
       state.education.push(action.payload);
       state.isDirty = true;
@@ -123,8 +150,8 @@ export const candidateOnboardingSlice = createSlice({
       state.education = state.education.filter(edu => edu.id !== action.payload);
       state.isDirty = true;
     },
-    
-    
+
+
     addCertificate: (state, action: PayloadAction<Certificate>) => {
       if (!state.certificates) {
         state.certificates = [];
@@ -140,12 +167,17 @@ export const candidateOnboardingSlice = createSlice({
       }
       state.isDirty = true;
     },
-    removeCertificate: (state, action: PayloadAction<string>) => {
+    _removeCertificate: (state, action: PayloadAction<string>) => {
       state.certificates = state.certificates.filter(cert => cert.id !== action.payload);
-      state.isDirty = true;
     },
-    
-    
+    clearCertificateFile: (state, action: PayloadAction<string>) => {
+      const certificateId = action.payload;
+      const certificate = state.certificates.find(cert => cert.id === certificateId);
+      if (certificate) {
+        certificate.fileUrl = "";
+        certificate.tempFileId = "";
+      }
+    },
     addProofOfWork: (state, action: PayloadAction<ProofOfWork>) => {
       if (!state.proofsOfWork) {
         state.proofsOfWork = [];
@@ -158,12 +190,12 @@ export const candidateOnboardingSlice = createSlice({
       const index = state.proofsOfWork.findIndex(pow => pow.id === id);
       if (index !== -1) {
         state.proofsOfWork[index] = { ...state.proofsOfWork[index], ...updates };
-        
-        
+
+
         if (updates.isCommunityWork !== undefined) {
           state.proofsOfWork[index].company_name = updates.isCommunityWork ? 'COF_PROOF_COMMUNITY' : state.proofsOfWork[index].company_name;
         }
-        
+
         state.isDirty = true;
       }
     },
@@ -171,8 +203,8 @@ export const candidateOnboardingSlice = createSlice({
       state.proofsOfWork = state.proofsOfWork.filter(pow => pow.id !== action.payload);
       state.isDirty = true;
     },
-    
-    
+
+
     addProject: (state, action: PayloadAction<Project>) => {
       if (!state.projects) {
         state.projects = [];
@@ -192,10 +224,20 @@ export const candidateOnboardingSlice = createSlice({
       state.projects = state.projects.filter(proj => proj.id !== action.payload);
       state.isDirty = true;
     },
-    
-    
+
+
     resetForm: (state) => {
       return { ...initialState, currentStep: state.currentStep };
+    },
+
+    setSubmissionStatus: (state, action: PayloadAction<{
+      step: string;
+      status: 'idle' | 'loading' | 'success' | 'error';
+      error?: string;
+    }>) => {
+      const { step, status, error } = action.payload;
+      state.submissionStatus[step] = status;
+      state.submissionErrors[step] = error || null;
     }
   }
 });
@@ -216,14 +258,64 @@ export const {
   removeEducation,
   addCertificate,
   updateCertificate,
-  removeCertificate,
   addProofOfWork,
   updateProofOfWork,
   removeProofOfWork,
   addProject,
   updateProject,
   removeProject,
-  resetForm
+  resetForm,
+  setSubmissionStatus,
+  clearCertificateFile
 } = candidateOnboardingSlice.actions;
+
+export const removeCertificate = createAsyncThunk(
+  'candidateOnboarding/removeCertificate',
+  async (certificateId: string, { getState, dispatch }) => {
+
+    const state = getState() as RootState;
+    const certificate = state.candidateOnboarding.certificates
+      .find(cert => cert.id === certificateId);
+
+    if (certificate?.fileUrl && certificate?.tempFileId) {
+      try {
+        const res = await fetchWithAuth_POST(
+          '/api/v1/upload/delete',
+          { fileId: certificate.tempFileId }
+        );
+      } catch (error) {
+      }
+    }
+
+    dispatch(candidateOnboardingSlice.actions._removeCertificate(certificateId));
+  }
+);
+
+export const removeFileFromCertificate = createAsyncThunk(
+  'candidateOnboarding/removeFileFromCertificate',
+  async (certificateId: string, { getState, dispatch }) => {
+    const state = getState() as RootState;
+    const certificate = state.candidateOnboarding.certificates
+      .find(cert => cert.id === certificateId);
+
+    if (certificate?.tempFileId) {
+      try {
+        await fetchWithAuth_POST(
+          '/api/v1/upload/delete',
+          { fileId: certificate.tempFileId }
+        );
+
+        dispatch(clearCertificateFile(certificateId));
+
+        return { success: true };
+      } catch (error) {
+        return { success: false, error };
+      }
+    }
+
+    dispatch(clearCertificateFile(certificateId));
+    return { success: true, message: 'No file to delete' };
+  }
+);
 
 export default candidateOnboardingSlice.reducer;

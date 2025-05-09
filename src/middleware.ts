@@ -2,22 +2,36 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify, JWTPayload } from "jose";
 
 export const config = {
-  matcher: [
+  matcher: [    
     '/api/v1/:path*',
     '/candidate/:path*',
     '/recruiter/:path*',
     '/auth',
-    '/auth/:path*',
+    '/auth/:path*',            
+    '/((?!_next/|static/|favicon.ico).*)',
   ],
 };
 
-// Pages that don't require authentication
 const PUBLIC_PATHS = [
   "/auth/sign-in",
   "/auth/sign-up",
   "/auth/recruiter-sign-in",
   "/auth/forgot-password",
   "/auth/reset-password",
+  "/portfolio/",
+  "/api/portfolio/",
+  "/api/banner-image"
+];
+
+const PUBLIC_PATH_PREFIXES = [
+  "/auth/sign-in",
+  "/auth/sign-up",
+  "/auth/recruiter-sign-in",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/portfolio/",
+  "/api/portfolio/",
+  "/api/banner-image"
 ];
 
 interface TokenPayload extends JWTPayload {
@@ -26,35 +40,55 @@ interface TokenPayload extends JWTPayload {
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const hostname = req.headers.get('host') || '';
+  
+  const mainDomain = process.env.NEXT_PUBLIC_BASE_URL || 'cofounds.in';
+  const isDevEnvironment = process.env.NODE_ENV === 'development';
   
   console.log("Middleware executing for:", pathname);
-  
-  if (PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
-    console.log("Auth page detected, checking if already logged in");
-        
-    const authToken = req.cookies.get("auth_token")?.value;
-    
-    if (authToken) {
-      try {        
-        const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
-        const { payload } = await jwtVerify(authToken, secret);
-        const typedPayload = payload as TokenPayload;
-        const userRole = typedPayload.role;
-        
-        console.log("User already logged in, redirecting based on role:", userRole);
-                
-        if (userRole === "recruiter") {
-          return NextResponse.redirect(new URL("/recruiter/app", req.url));
-        } else if (userRole === "candidate") {
-          return NextResponse.redirect(new URL("/candidate/app", req.url));
-        }
-      } catch (error) {
-        console.log("Invalid token, allowing access to auth page");        
-      }
-    }
-        
-    console.log("No valid token, allowing access to auth page");
+
+  if (pathname.startsWith("/api/portfolio/")) {
+    console.log("Portfolio API request, allowing access");
     return NextResponse.next();
+  }
+  
+  if (isDevEnvironment && hostname.includes('localhost')) {
+        
+        
+    const subdomainMatch = hostname.match(/^([^.]+)\.localhost/);
+    
+    if (subdomainMatch && subdomainMatch[1] !== 'www') {
+      console.log("Local subdomain detected:", subdomainMatch[1]);
+      
+      const url = req.nextUrl.clone();
+      url.pathname = `/portfolio/${subdomainMatch[1]}`;
+      
+      console.log(`Rewriting ${hostname}${pathname} to ${url.pathname}`);
+      return NextResponse.rewrite(url);
+    }
+  }
+    
+  else {
+    const isSubdomain = !hostname.startsWith('www.') &&
+                        hostname !== mainDomain &&
+                        hostname.endsWith(`.${mainDomain}`);
+                        
+    if (isSubdomain) {
+      console.log("Production subdomain detected:", hostname);
+      
+      const username = hostname.split('.')[0];
+      
+      const url = req.nextUrl.clone();
+      url.pathname = `/portfolio/${username}`;
+      
+      console.log(`Rewriting ${hostname}${pathname} to ${url.pathname}`);
+      return NextResponse.rewrite(url);
+    }
+  }
+  
+  if (PUBLIC_PATH_PREFIXES.some(prefix => pathname.startsWith(prefix))) {
+    console.log("Public path detected, allowing access without auth check");
+    return NextResponse.next(); // Immediately return next() without further checks
   }
     
   if (pathname === "/auth") {

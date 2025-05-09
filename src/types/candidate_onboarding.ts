@@ -1,13 +1,11 @@
 import { SkillWithLevel } from './shared';
 
-// Core data models for candidate onboarding
 export interface DateField {
   year: string;
   month: string;
   day: string;
 }
 
-// Reference the shared skill type
 export interface SkillWithId extends SkillWithLevel {}
 
 export interface Education {
@@ -27,6 +25,7 @@ export interface Certificate {
   endDate: DateField | null;
   fileUrl?: string;
   externalUrl?: string;
+  tempFileId?: string;
 }
 
 export interface ProofOfWork {
@@ -50,32 +49,24 @@ export interface Project {
   currentlyBuilding: boolean;
 }
 
-// Form field definitions
-export interface OnboardingFormFields {
-  // Step 1
+export interface OnboardingFormFields {  
   userName: string;
-  
-  // Step 2
+    
   firstName: string;
   lastName: string;
   dateOfBirth: DateField;
   description: string;
   skills: SkillWithLevel[];
-  
-  // Step 3
+    
   education: Education[];
-  
-  // Step 4
+    
   certificates: Certificate[];
-  
-  // Step 5
+    
   proofsOfWork: ProofOfWork[];
-  
-  // Step 6
+    
   projects: Project[];
 }
 
-// Constants
 export const DegreeOptions = [
   { value: 'high_school', label: 'High School (10+2)' },
   { value: 'associate', label: 'Associate Degree' },

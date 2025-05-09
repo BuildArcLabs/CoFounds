@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { AlertCircle, ChevronDown, X, Loader2, Settings } from 'lucide-react';
-import { fetchSkillsPaginated, Skill as ApiSkill } from '@/redux/masters/skillMaster';
+import { fetchSkillsPaginated, fetchAllSkills, Skill as ApiSkill } from '@/redux/masters/skillMaster';
 import { useAppDispatch } from '@/redux/hooks';
 import { SkillWithLevel } from '@/types/shared';
 
@@ -12,6 +12,8 @@ interface PaginatedSkillsSelectorProps {
   onSkillRemove: (skillId: string) => void;
   onSkillLevelChange?: (skillId: string, level: 'beginner' | 'intermediate' | 'advanced') => void;
   error?: string;
+  disabled?: boolean;
+  fetchAll?: boolean; // New prop to choose between fetching all skills or paginated
 }
 
 export default function PaginatedSkillsSelector({
@@ -19,7 +21,9 @@ export default function PaginatedSkillsSelector({
   onSkillSelect,
   onSkillRemove,
   onSkillLevelChange,
-  error
+  error,
+  disabled = false,
+  fetchAll = false // Default to paginated behavior
 }: PaginatedSkillsSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,22 +40,30 @@ export default function PaginatedSkillsSelector({
     const loadSkills = async () => {
       setIsLoading(true);
       try {
-        const result = await dispatch(fetchSkillsPaginated(currentPage)).unwrap();
-        if (currentPage === 1) {
-          setAvailableSkills(result.skills);
+        if (fetchAll) {
+          // Use the fetchAllSkills thunk when fetchAll is true
+          const allSkills = await dispatch(fetchAllSkills()).unwrap();
+          setAvailableSkills(allSkills);
+          setTotalPages(1); // No pagination needed
         } else {
-          setAvailableSkills(prev => [...prev, ...result.skills]);
+          // Use the paginated thunk
+          const result = await dispatch(fetchSkillsPaginated(currentPage)).unwrap();
+          if (currentPage === 1) {
+            setAvailableSkills(result.skills);
+          } else {
+            setAvailableSkills(prev => [...prev, ...result.skills]);
+          }
+          setTotalPages(result.totalPages);
         }
-        setTotalPages(result.totalPages);
       } catch (error) {
-  
+        // Error handling remains unchanged
       } finally {
         setIsLoading(false);
       }
     };
 
     loadSkills();
-  }, [dispatch, currentPage]);
+  }, [dispatch, currentPage, fetchAll]); // Added fetchAll to dependencies
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -106,9 +118,16 @@ export default function PaginatedSkillsSelector({
   };
 
   const toggleSkillLevelMenu = (skillId: string, e: React.MouseEvent) => {
+    if (disabled) return;
+    
     e.stopPropagation();
     e.preventDefault();
     setSkillLevelMenuOpen(skillLevelMenuOpen === skillId ? null : skillId);
+  };
+
+  const handleDropdownToggle = () => {
+    if (disabled) return;
+    setIsOpen(!isOpen);
   };
 
   return (
@@ -117,19 +136,23 @@ export default function PaginatedSkillsSelector({
         {selectedSkills.map(skill => (
           <div 
             key={skill.id}
-            className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm flex items-center"
+            className={`bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm flex items-center ${
+              disabled ? 'opacity-70' : ''
+            }`}
           >
             <span className="mr-2">{skill.name}</span>
             <div className="relative">
               <button
                 type="button"
                 onClick={(e) => toggleSkillLevelMenu(skill.id, e)}
-                className="inline-flex items-center text-xs px-1.5 py-0.5 bg-indigo-200 rounded-full hover:bg-indigo-300"
+                disabled={disabled}
+                className={`inline-flex items-center text-xs px-1.5 py-0.5 bg-indigo-200 rounded-full
+                  ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-300'}`}
               >
                 <span>{skill.level}</span>
                 <Settings className="h-3 w-3 ml-1" />
               </button>
-              {skillLevelMenuOpen === skill.id && (
+              {skillLevelMenuOpen === skill.id && !disabled && (
                 <div 
                   ref={el => { menuRefs.current[skill.id] = el; }}
                   className="absolute z-50 mt-1 right-0 bg-white shadow-lg rounded-md overflow-hidden border border-gray-200 w-32"
@@ -164,7 +187,10 @@ export default function PaginatedSkillsSelector({
             <button 
               type="button"
               onClick={() => onSkillRemove(skill.id)}
-              className="ml-2 text-indigo-600 hover:text-indigo-800"
+              disabled={disabled}
+              className={`ml-2 text-indigo-600 ${
+                disabled ? 'opacity-50 cursor-not-allowed' : 'hover:text-indigo-800'
+              }`}
             >
               <X className="h-4 w-4" />
             </button>
@@ -181,8 +207,12 @@ export default function PaginatedSkillsSelector({
       <div className="relative" ref={dropdownRef}>
         <button
           type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-full flex items-center justify-between px-4 py-2 text-left border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          onClick={handleDropdownToggle} 
+          disabled={disabled}
+          className={`w-full flex items-center justify-between px-4 py-2 text-left border border-gray-300 rounded-md shadow-sm 
+            ${disabled 
+              ? 'bg-gray-100 cursor-not-allowed opacity-70' 
+              : 'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500'}`}
         >
           <span className="block truncate">
             {isOpen ? 'Close' : 'Select skills'}
@@ -199,6 +229,7 @@ export default function PaginatedSkillsSelector({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                disabled={disabled}
               />
             </div>
             
@@ -214,7 +245,10 @@ export default function PaginatedSkillsSelector({
                   key={skill.id}
                   type="button"
                   onClick={() => handleSkillSelect(skill)}
-                  className="w-full text-left px-4 py-2 hover:bg-indigo-50 focus:bg-indigo-50 focus:outline-none"
+                  className={`w-full text-left px-4 py-2 ${
+                    disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-50 focus:bg-indigo-50 focus:outline-none'
+                  }`}
+                  disabled={disabled}
                 >
                   {skill.name}
                 </button>
@@ -227,11 +261,14 @@ export default function PaginatedSkillsSelector({
                 </div>
               )}
               
-              {!isLoading && currentPage < totalPages && (
+              {!isLoading && !fetchAll && currentPage < totalPages && (
                 <button
                   type="button"
                   onClick={loadMoreSkills}
-                  className="w-full text-center py-2 text-indigo-600 hover:text-indigo-800 border-t border-gray-200"
+                  className={`w-full text-center py-2 text-indigo-600 ${
+                    disabled ? 'opacity-50 cursor-not-allowed' : 'hover:text-indigo-800'
+                  } border-t border-gray-200`}
+                  disabled={disabled}
                 >
                   Load more skills
                 </button>

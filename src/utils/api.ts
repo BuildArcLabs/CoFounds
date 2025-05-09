@@ -27,19 +27,16 @@ export async function fetchWithAuth_GET<T = unknown>(
   queryParams: Record<string, string> = {}, 
   options: RequestInit = {}
 ): Promise<T> {
-  // Add query parameters to URL if provided
   const queryString = new URLSearchParams(queryParams).toString();
   const finalUrl = queryString ? `${url}?${queryString}` : url;
   
-  // Debug: Log the full URL being requested  
   
   try {
     const response = await fetch(finalUrl, addAuthHeaders({ 
       ...options,
       method: 'GET',
     }));
-    
-    // Debug: Log response status and headers        
+      
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -48,8 +45,7 @@ export async function fetchWithAuth_GET<T = unknown>(
     }
     
     return response.json();
-  } catch (error) {
-    // Log the full error object
+  } catch (error) {  
     console.error("Request failed:", error);
     throw error;
   }
@@ -143,6 +139,40 @@ export async function fetchWithAuth_PATCH<T = unknown, D = unknown>(
   
   if (!response.ok) {
     throw new Error(`HTTP error ${response.status}: ${await response.text()}`);
+  }
+  
+  return response.json();
+}
+
+/**
+ * Specialized function for authenticated file uploads using FormData
+ * @param url The URL to upload to
+ * @param formData The FormData object containing the file and metadata
+ * @param options Additional fetch options
+ */
+export async function fetchWithAuth_UPLOAD<T = unknown>(
+  url: string, 
+  formData: FormData,
+  options: RequestInit = {}
+): Promise<T> {
+  const token = localStorage.getItem("auth_token");
+  
+  const headers = {
+    "Authorization": token ? `Bearer ${token}` : "",
+    ...options.headers,
+  };
+  
+  const response = await fetch(url, {
+    ...options,
+    method: 'POST', 
+    headers,
+    body: formData,
+  });
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Upload error response:", errorText);
+    throw new Error(`Upload failed: ${response.status} ${errorText}`);
   }
   
   return response.json();

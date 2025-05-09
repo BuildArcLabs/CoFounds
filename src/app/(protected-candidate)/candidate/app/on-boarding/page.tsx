@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import StepIndicator from '@/components/StepIndicator/StepIndicator';
 import Alert from '@/components/Alert/Alert';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import { setStatus, resetForm } from '@/redux/slices/candidateOnboardingSlice';
+import { setStatus, resetForm, setStep } from '@/redux/slices/candidateOnboardingSlice';
 import { OnboardingFormFields } from './components/types';
 import { validateStep } from './utils/validation';
 import { useOnboardingNavigation } from './hooks/useOnboardingNavigation';
@@ -19,9 +19,7 @@ export default function CandidateOnboarding() {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
-
   const onboarding = useAppSelector(state => state.candidateOnboarding);
-
 
   const form = useForm<OnboardingFormFields>({
     defaultValues: {
@@ -40,12 +38,10 @@ export default function CandidateOnboarding() {
 
   const { watch, reset, register, handleSubmit } = form;
 
-
   const { goToPreviousStep, goToNextStep, goToStep } = useOnboardingNavigation(
     onboarding.currentStep,
     onboarding.steps
   );
-
 
   useEffect(() => {
     register('description', { required: 'Description is required' });
@@ -54,23 +50,20 @@ export default function CandidateOnboarding() {
     });
   }, [register]);
 
-
   const validateAndGoToNextStep = () => {
     const formData = watch();
     const { isValid, errors: validationErrors } = validateStep(onboarding.currentStep, formData);
-
+  
     if (!isValid) {
       setAlertMessage(validationErrors.join(", "));
       setShowAlert(true);
       return false;
     }
-
-
-    goToNextStep();
+        
+    dispatch(setStep(onboarding.currentStep + 1));
     return true;
   };
-
-
+  
   const completeFormReset = () => {
     dispatch(resetForm());
     reset({
@@ -86,21 +79,17 @@ export default function CandidateOnboarding() {
     });
     setShowAlert(false);
 
-
     if (onboarding.currentStep !== 1) {
-
       if (typeof goToStep === 'function') {
         goToStep(1);
       } else {
-
         window.location.hash = onboarding.steps[0];
       }
     }
   };
 
-
-  const onSubmit: SubmitHandler<OnboardingFormFields> = (data) => {
-    // console.log('Form data to submit:', data);
+  const onSubmit: SubmitHandler<OnboardingFormFields> = (data) => {    
+    console.log('Form validated:', data);
   };
 
   return (
@@ -144,6 +133,7 @@ export default function CandidateOnboarding() {
             type="button"
             onClick={completeFormReset}
             className="text-sm text-gray-500 hover:text-gray-700"
+            disabled={onboarding.status === 'submitting'}
           >
             Reset Form
           </button>
