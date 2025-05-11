@@ -185,15 +185,78 @@ export async function updateProjects(projects: UserProjects[]): Promise<UserProj
   }
 }
 
-export async function updateCertificates(certificates: UserCertificates[]): Promise<UserCertificates[]> {
+export async function updateCertificates(certificateData: {
+  user_id: string;
+  new_certificates: Array<{
+    title: string;
+    description: string | null;
+    started_at: string | null;
+    end_at: string | null;
+    link: string | null;
+  }>;
+  updated_certificates: Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    started_at: string | null;
+    end_at: string | null;
+    link: string | null;
+  }>;
+  deleted_certificates: string[];
+}): Promise<{
+  updated: number;
+  created: number;
+  deleted: number;
+  total: number;
+}> {
   try {
-    console.log('Updating certificates with data:', certificates);
+    console.log('==================== CERTIFICATE FORM DATA ====================');
+    console.log('User ID:', certificateData.user_id);
+    
+    console.log('\n===== NEW CERTIFICATES =====');
+    certificateData.new_certificates.forEach((cert, index) => {
+      console.log(`Certificate #${index + 1}:`);
+      console.log('- Title:', cert.title);
+      console.log('- Description:', cert.description);
+      console.log('- Started at:', cert.started_at);
+      console.log('- End at:', cert.end_at ? cert.end_at : 'No expiry date');
+      console.log('- Link:', cert.link);
+      console.log('------------------------');
+    });
+    
+    console.log('\n===== UPDATED CERTIFICATES =====');
+    certificateData.updated_certificates.forEach((cert, index) => {
+      console.log(`Certificate #${index + 1}:`);
+      console.log('- ID:', cert.id);
+      console.log('- Title:', cert.title);
+      console.log('- Description:', cert.description);
+      console.log('- Started at:', cert.started_at);
+      console.log('- End at:', cert.end_at ? cert.end_at : 'No expiry date');
+      console.log('- Link:', cert.link);
+      console.log('------------------------');
+    });
+    
+    console.log('\n===== DELETED CERTIFICATES =====');
+    console.log(certificateData.deleted_certificates);
+    console.log('================================================================');
 
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Use the actual API call now
+    const response = await fetchWithAuth_PUT<ApiResponse<{
+      updated: number;
+      created: number;
+      deleted: number;
+      total: number;
+    }>>(
+      API_ENDPOINTS.CERTIFICATES,
+      certificateData
+    );
 
-    console.log('Certificates update completed:', certificates);
+    if (!response.success || !response.data) {
+      throw new Error(response.error || 'Failed to update certificates');
+    }
 
-    return certificates;
+    console.log('Certificates update completed:', response.data);
+    return response.data;
   } catch (error) {
     console.error('Error updating certificates:', error);
     throw error;
