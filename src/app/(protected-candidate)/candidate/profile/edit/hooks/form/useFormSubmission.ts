@@ -1,9 +1,10 @@
 import { useState, useCallback } from "react";
 import { FormDataState, StatusMessage } from "../../components/types";
-import { updatePersonalInfo, updateSkills, updateCertificates, UserProfile } from "../../api";
+import { updatePersonalInfo, updateSkills, updateCertificates, updateProofOfWork, UserProfile } from "../../api";
 import { PersonalInfoFormRef } from "../../components/PersonalInfoForm";
 import { SkillsFormRef } from "../../components/SkillsForm";
 import { CertificateFormRef } from "../../components/CertificateForm";
+import { ProofOfWorkFormRef } from "../../components/proof-of-work/types";
 
 export function useFormSubmission(
   formData: FormDataState | null,
@@ -11,6 +12,7 @@ export function useFormSubmission(
   personalFormRef: React.RefObject<PersonalInfoFormRef>,
   skillsFormRef: React.RefObject<SkillsFormRef>,
   certificateFormRef: React.RefObject<CertificateFormRef>,
+  proofOfWorkFormRef: React.RefObject<ProofOfWorkFormRef>,
   activeTab: string,
   refetchProfile: () => Promise<UserProfile | null>,
   setStatusMessage: (message: StatusMessage | null) => void
@@ -25,12 +27,14 @@ export function useFormSubmission(
       skillsFormRef.current.saveForm();
     } else if (activeTab === "certificates" && certificateFormRef.current) {
       certificateFormRef.current.saveForm();
+    } else if (activeTab === "proof-of-work" && proofOfWorkFormRef.current) {
+      proofOfWorkFormRef.current.saveForm();
     }
 
     if (formData) {
       setShowConfirmDialog(true);
     }
-  }, [activeTab, formData, personalFormRef, skillsFormRef, certificateFormRef]);
+  }, [activeTab, formData, personalFormRef, skillsFormRef, certificateFormRef, proofOfWorkFormRef]);
 
   const handleCancelChanges = useCallback(() => {
     if (activeTab === "personal-info" && personalFormRef.current) {
@@ -39,6 +43,8 @@ export function useFormSubmission(
       skillsFormRef.current.resetForm();
     } else if (activeTab === "certificates" && certificateFormRef.current) {
       certificateFormRef.current.resetForm();
+    } else if (activeTab === "proof-of-work" && proofOfWorkFormRef.current) {
+      proofOfWorkFormRef.current.resetForm();
     }
 
     resetFormData();
@@ -46,7 +52,7 @@ export function useFormSubmission(
       type: "info",
       message: "Changes discarded."
     });
-  }, [activeTab, personalFormRef, skillsFormRef, certificateFormRef, resetFormData, setStatusMessage]);
+  }, [activeTab, personalFormRef, skillsFormRef, certificateFormRef, proofOfWorkFormRef, resetFormData, setStatusMessage]);
 
   const handleSubmitSuccess = useCallback(() => {
     resetFormData();
@@ -72,14 +78,30 @@ export function useFormSubmission(
         case 'personal-info':
           await updatePersonalInfo(formData.data);
           updatedProfile = await refetchProfile();
+          if (personalFormRef.current) {
+            personalFormRef.current.resetForm();
+          }
           break;
         case 'skills':
           await updateSkills(formData.data.skillsUpdateData);
           updatedProfile = await refetchProfile();
+          if (skillsFormRef.current) {
+            skillsFormRef.current.resetForm();
+          }
           break;
         case 'certificates':
           await updateCertificates(formData.data.certificatesUpdateData);
           updatedProfile = await refetchProfile();
+          if (certificateFormRef.current) {
+            certificateFormRef.current.resetForm();
+          }
+          break;
+        case 'proof-of-work':
+          await updateProofOfWork(formData.data);
+          updatedProfile = await refetchProfile();
+          if (proofOfWorkFormRef.current) {
+            proofOfWorkFormRef.current.resetForm();
+          }
           break;
         default:
           console.warn('Unknown form:', formData);
@@ -98,7 +120,7 @@ export function useFormSubmission(
       setIsSubmitting(false);
       setShowConfirmDialog(false);
     }
-  }, [formData, handleSubmitSuccess, refetchProfile, setStatusMessage]);
+  }, [formData, handleSubmitSuccess, refetchProfile, setStatusMessage, personalFormRef, skillsFormRef, certificateFormRef, proofOfWorkFormRef]);
 
   return {
     isSubmitting,

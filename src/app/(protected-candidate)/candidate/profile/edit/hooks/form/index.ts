@@ -8,6 +8,7 @@ import { useMemo } from 'react';
 import { PersonalInfoFormRef } from '../../components/PersonalInfoForm';
 import { SkillsFormRef } from '../../components/SkillsForm';
 import { CertificateFormRef } from '../../components/CertificateForm';
+import { ProofOfWorkFormRef } from '../../components/ProofOfWorkForm';
 
 export function useFormManagement(
     defaultTab: string,
@@ -25,18 +26,49 @@ export function useFormManagement(
     );
 
     const { statusMessage, setStatusMessage } = useStatusMessage();
-    const { hasUnsavedChanges, setHasUnsavedChanges, formData, setFormData, activeForm, userId,
-        handlePersonalInfoChange, handlePersonalInfoData, handleSkillsChange,
-        handleCertificateChange, resetFormData } = useFormData();
-    const { personalFormRef, skillsFormRef, certificateFormRef } = useFormRefs();
-    const { activeTab, setActiveTab, handleTabChange } = useTabState(defaultTab, hasUnsavedChanges);
-    const { isSubmitting, showConfirmDialog, setShowConfirmDialog,
-        handleSaveClick, handleCancelChanges, handleConfirmSave } = useFormSubmission(
+    const {
+        hasUnsavedChanges,
+        setHasUnsavedChanges,
+        formData,
+        setFormData,
+        activeForm,
+        userId,
+        handlePersonalInfoChange,
+        handlePersonalInfoData,
+        handleSkillsChange,
+        handleCertificateChange,
+        handleProofOfWorkChange,
+        handleProofOfWorkData,
+        resetFormData
+    } = useFormData();
+
+    const {
+        personalFormRef,
+        skillsFormRef,
+        certificateFormRef,
+        proofOfWorkFormRef
+    } = useFormRefs();
+
+    const {
+        activeTab,
+        setActiveTab,
+        handleTabChange
+    } = useTabState(defaultTab, hasUnsavedChanges);
+
+    const {
+        isSubmitting,
+        showConfirmDialog,
+        setShowConfirmDialog,
+        handleSaveClick,
+        handleCancelChanges,
+        handleConfirmSave
+    } = useFormSubmission(
             formData,
             resetFormData,
             personalFormRef as React.RefObject<PersonalInfoFormRef>,
             skillsFormRef as React.RefObject<SkillsFormRef>,
             certificateFormRef as React.RefObject<CertificateFormRef>,
+            proofOfWorkFormRef as React.RefObject<ProofOfWorkFormRef>, 
             activeTab,
             refetchProfile,
             setStatusMessage
@@ -57,6 +89,7 @@ export function useFormManagement(
         personalFormRef,
         skillsFormRef,
         certificateFormRef,
+        proofOfWorkFormRef,
 
         // Status and dialogs
         statusMessage,
@@ -75,6 +108,8 @@ export function useFormManagement(
         handlePersonalInfoData,
         handleSkillsChange,
         handleCertificateChange,
+        handleProofOfWorkChange,
+        handleProofOfWorkData,
 
         // User info
         userId,
